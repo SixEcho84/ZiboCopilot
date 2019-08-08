@@ -46,6 +46,10 @@ bool ui_active = true;
 char procedure_touser[55][255] = {
 	"Power Up",
 	"Pre Flight",
+	"Start APU",
+	"Before Engine Start",
+	"Start Engine 2",
+	"Start Engine 1",
 	"Before Taxi",
 	"Before Takeoff",
 	"Gear Up",
@@ -92,7 +96,12 @@ char DataRefList::dataRefList[100][255] = {
 	"laminar/B738/toggle_switch/fo_probes_pos",					//PROBE HEAT R 24
 	"laminar/B738/electrical/apu_bus_enable",					//CHECK APU BUS LIT 25
 	"laminar/B738/flt_ctrls/flap_lever",						//FLAPS LEVER 26
-	"sim/cockpit2/switches/auto_brake_level"					//AUTOBRAKE POS 27, 0 is RTO, 1 is OFF
+	"sim/cockpit2/switches/auto_brake_level",					//AUTOBRAKE POS 27, 0 is RTO, 1 is OFF
+	"laminar/B738/gpu_available",								//GPU 28, 0 is disconnectet, 1 is Connectet
+	"laminar/B738/FMS/takeoff_flaps",							//FMS T/O FLAPS SETTINGS 29, 1 is Flaps 1, 5 is Flaps 5, 15 is Flaps 15
+	"laminar/B738/engine/ignition2",							//ENG STARTER 30, 0 is Starter ENG2 CUTOUT
+	"laminar/B738/engine/ignition1",							//ENG STARTER 31, 0 is Starter ENG1 CUTOUT
+	"laminar/B738/gpu_available"								//GPU 32, 1
 };
 
 //-------------------------------------------------------- Window -----------------------------------------------//
@@ -120,11 +129,12 @@ static int MyHandleMouseClickCallback(
 //-------------------------------------------------------- Initiate Commands ------------------------------------//
 XPLMCommandRef cmdpowerUpProcedures = nullptr;
 XPLMCommandRef cmdpreflightProcedures = nullptr;
+XPLMCommandRef cmdstartApuProcedures = nullptr;
+XPLMCommandRef cmdengineStartProcedures = nullptr;
 XPLMCommandRef cmdbeforeTaxiProcedures = nullptr;
 XPLMCommandRef cmdbeforeTakeoffProcedures = nullptr;
 XPLMCommandRef cmdcleanUpProcedures = nullptr;
 XPLMCommandRef cmdshutdownProcedures = nullptr;
-XPLMCommandRef cmdshowHideUI = nullptr;
 XPLMCommandRef cmdnextStep = nullptr;
 
 
@@ -135,12 +145,13 @@ void doNextProcedure();
 bool canStartNewProcedure();
 int funcpowerUpProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 int funcpreflightProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
+int funcstartApuProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void* inRefcon);
+int funcengineStartProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void* inRefcon);
 int funcbeforeTaxiProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 int funcbeforeTakeoffProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 int funccleanUpProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 int funcshutdownProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 int funcnextProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
-int funcshowHideUI(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon);
 void menu_handler(void *, void *);
 
 
@@ -156,6 +167,8 @@ PLUGIN_API int XPluginStart(char * outName, char * outSig, char * outDesc)
   
 	XPLMAppendMenuItem(g_menu_id, "Powerup Procedure", (void *)"power_up", 1);
 	XPLMAppendMenuItem(g_menu_id, "Preflight Procedures", (void *)"preflight", 1);
+	XPLMAppendMenuItem(g_menu_id, "APU Start Procedures", (void*)"start_apu", 1);
+	XPLMAppendMenuItem(g_menu_id, "Before Engine Start Procedures", (void*)"engine_start", 1);
 	XPLMAppendMenuItem(g_menu_id, "Before Taxi Procedures", (void *)"before_taxi", 1);
 	XPLMAppendMenuItem(g_menu_id, "Before Takeoff Procedures", (void *)"before_takeoff", 1);
 	XPLMAppendMenuItem(g_menu_id, "Clean Up Procedures", (void *)"clean_up", 1);
@@ -174,20 +187,22 @@ PLUGIN_API int XPluginStart(char * outName, char * outSig, char * outDesc)
 	//Commands
 	cmdpowerUpProcedures = XPLMCreateCommand("737/Zibocopilot/powerUpProcedure", "Power Up Procedure");
 	cmdpreflightProcedures = XPLMCreateCommand("737/Zibocopilot/preflightProcedure", "Preflight Procedure");
+	cmdstartApuProcedures = XPLMCreateCommand("737/Zibocopilot/startApuProcedure", "APU Start Procedure");
+	cmdengineStartProcedures = XPLMCreateCommand("737/Zibocopilot/engineStartProcedure", "Before Engine Start Procedure");
 	cmdbeforeTaxiProcedures = XPLMCreateCommand("737/Zibocopilot/beforeTaxiProcedure", "Before Taxi Procedure");
 	cmdbeforeTakeoffProcedures = XPLMCreateCommand("737/Zibocopilot/beforeTakeoffProcedure", "Before Takeoff Procedure");
 	cmdcleanUpProcedures = XPLMCreateCommand("737/Zibocopilot/cleanUpProcedure", "Clean Up Procedure");
 	cmdshutdownProcedures = XPLMCreateCommand("737/Zibocopilot/shutdownProcedure", "Shutdown Procedure");
 	cmdnextStep = XPLMCreateCommand("737/Zibocopilot/nextStep", "Next Procedure");
-    cmdnextStep = XPLMCreateCommand("737/Zibocopilot/showHideUI", "Show Hide UI");
 	XPLMRegisterCommandHandler(cmdpowerUpProcedures, funcpowerUpProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdpreflightProcedures, funcpreflightProcedures, 1, nullptr);
+	XPLMRegisterCommandHandler(cmdstartApuProcedures, funcstartApuProcedures, 1, nullptr);
+	XPLMRegisterCommandHandler(cmdengineStartProcedures, funcengineStartProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdbeforeTaxiProcedures, funcbeforeTaxiProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdbeforeTakeoffProcedures, funcbeforeTakeoffProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdcleanUpProcedures, funccleanUpProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdshutdownProcedures, funcshutdownProcedures, 1, nullptr);
 	XPLMRegisterCommandHandler(cmdnextStep, funcnextProcedures, 1, nullptr);
-    XPLMRegisterCommandHandler(cmdshowHideUI, funcshowHideUI, 1, nullptr);
 
 	gWindow = XPLMCreateWindow(
 		50, 75, 400, 50,			/* Area of the window. */
@@ -274,6 +289,14 @@ void menu_handler(void * in_menu_ref, void * in_item_ref)
 	{
 		startFunction(SubHandler::pre_flight);
 	}
+	else if (!strcmp(compare_string, "start_apu"))
+	{
+		startFunction(SubHandler::start_apu);
+	}
+	else if (!strcmp(compare_string, "engine_start"))
+	{
+		startFunction(SubHandler::engine_start);
+	}
 	else if (!strcmp(compare_string, "before_taxi"))
 	{
 		startFunction(SubHandler::before_taxi);
@@ -336,6 +359,64 @@ void startFunction (SubHandler::Procedures procedure) {
 			subHandler.ProcedureStage = 0;
 			XPLMSpeakString("Stopping Preflight Procedures");
 			subHandler.procedures[SubHandler::Procedures::pre_flight] = false;
+			XPLMUnregisterFlightLoopCallback(MyFlightLoopCallback, nullptr);
+		}
+	}
+	else if (procedure == SubHandler::start_apu)
+	{
+		if (!subHandler.procedures[SubHandler::Procedures::start_apu]) {
+			XPLMSpeakString("Start APU");
+			subHandler.procedures[SubHandler::Procedures::start_apu] = true;
+			subHandler.timeElapsed = XPLMGetElapsedTime();
+			XPLMRegisterFlightLoopCallback(MyFlightLoopCallback, 1.0, nullptr);
+		}
+		else {
+			subHandler.ProcedureStage = 0;
+			XPLMSpeakString("Stopping APU Start");
+			subHandler.procedures[SubHandler::Procedures::start_apu] = false;
+			XPLMUnregisterFlightLoopCallback(MyFlightLoopCallback, nullptr);
+		}
+	}
+	else if (procedure == SubHandler::engine_start)
+	{
+		if (!subHandler.procedures[SubHandler::Procedures::engine_start]) {
+			XPLMSpeakString("Beginning Before Engine Startup Procedures");
+			subHandler.procedures[SubHandler::Procedures::engine_start] = true;
+			subHandler.timeElapsed = XPLMGetElapsedTime();
+			XPLMRegisterFlightLoopCallback(MyFlightLoopCallback, 1.0, nullptr);
+		}
+		else {
+			subHandler.ProcedureStage = 0;
+			XPLMSpeakString("Stopping Before Engine Startup Procedures");
+			subHandler.procedures[SubHandler::Procedures::engine_start] = false;
+			XPLMUnregisterFlightLoopCallback(MyFlightLoopCallback, nullptr);
+		}
+	}
+	else if (procedure == SubHandler::start_eng2)
+	{
+		if (!subHandler.procedures[SubHandler::Procedures::start_eng2]) {
+			subHandler.procedures[SubHandler::Procedures::start_eng2] = true;
+			subHandler.timeElapsed = XPLMGetElapsedTime();
+			XPLMRegisterFlightLoopCallback(MyFlightLoopCallback, 1.0, nullptr);
+		}
+		else {
+			subHandler.ProcedureStage = 0;
+			XPLMSpeakString("Stopping Before Engine Startup Procedures");
+			subHandler.procedures[SubHandler::Procedures::start_eng2] = false;
+			XPLMUnregisterFlightLoopCallback(MyFlightLoopCallback, nullptr);
+		}
+	}
+	else if (procedure == SubHandler::start_eng1)
+	{
+		if (!subHandler.procedures[SubHandler::Procedures::start_eng1]) {
+			subHandler.procedures[SubHandler::Procedures::start_eng1] = true;
+			subHandler.timeElapsed = XPLMGetElapsedTime();
+			XPLMRegisterFlightLoopCallback(MyFlightLoopCallback, 1.0, nullptr);
+		}
+		else {
+			subHandler.ProcedureStage = 0;
+			XPLMSpeakString("Stopping Before Engine Startup Procedures");
+			subHandler.procedures[SubHandler::Procedures::start_eng1] = false;
 			XPLMUnregisterFlightLoopCallback(MyFlightLoopCallback, nullptr);
 		}
 	}
@@ -586,6 +667,24 @@ int funcpreflightProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, 
 	}
 	return 0;
 }
+int funcstartApuProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void* inRefcon) {
+	if (!canStartNewProcedure())
+		return 0;
+	if (inPhase == xplm_CommandBegin)
+	{
+		startFunction(SubHandler::start_apu);
+	}
+	return 0;
+}
+int funcengineStartProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void* inRefcon) {
+	if (!canStartNewProcedure())
+		return 0;
+	if (inPhase == xplm_CommandBegin)
+	{
+		startFunction(SubHandler::engine_start);
+	}
+	return 0;
+}
 int funcbeforeTaxiProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon) {
 	if (!canStartNewProcedure())
 		return 0;
@@ -630,17 +729,6 @@ int funcnextProcedures(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void 
 		doNextProcedure();
 	}
 	return 0;
-}
-int funcshowHideUI(XPLMCommandRef inCommand, XPLMCommandPhase inPhase, void * inRefcon) {
-    if (ui_active)
-    {
-        ui_active = false;
-    }
-    else
-    {
-        ui_active = true;
-    }
-    return 0;
 }
 
 //-------------------------------------------------------- Next Procedure Function ------------------------------//

@@ -32,6 +32,8 @@ using namespace std;
 #include "SubHandler.h"
 #include "Procedures/PowerUpProcedure.h"
 #include "Procedures/PreflightProcedure.h"
+#include "Procedures/StartApuProcedure.h"
+#include "Procedures/EngineStartProcedure.h"
 #include "Procedures/BeforeTaxiProcedure.h"
 #include "Procedures/BeforeTakeoffProcedure.h"
 #include "Procedures/CleanupProcedure.h"
@@ -74,6 +76,34 @@ void SubHandler::doProcedures(float elapsed) {
 
 	}
 
+	if (procedures[start_apu]) {
+		if (StartApuProcedure::startApuProcedure(ProcedureStage) == 1)
+			ProcedureStage++;
+		else if (StartApuProcedure::startApuProcedure(ProcedureStage) == 2)
+			finishProcedure(start_apu);
+
+	}
+
+	if (procedures[engine_start]) {
+		if (EngineStartProcedure::engineStartProcedure(ProcedureStage) == 1)
+			ProcedureStage++;
+		else if (EngineStartProcedure::engineStartProcedure(ProcedureStage) == 2)
+			finishProcedure(engine_start);
+
+	}
+	if (procedures[start_eng2]) {
+		if (EngineStartProcedure::startEng2(ProcedureStage) == 1)
+			ProcedureStage++;
+		else if (EngineStartProcedure::startEng2(ProcedureStage) == 2)
+			finishProcedure(start_eng2);
+	}
+
+	if (procedures[start_eng1]) {
+		if (EngineStartProcedure::startEng1(ProcedureStage) == 1)
+			ProcedureStage++;
+		else if (EngineStartProcedure::startEng1(ProcedureStage) == 2)
+			finishProcedure(start_eng1);
+	}
 	if (procedures[before_taxi]) {
 		if (BeforeTaxiProcedure::beforeTaxiProcedure(ProcedureStage) == 1)
 			ProcedureStage++;

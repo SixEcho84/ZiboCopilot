@@ -40,6 +40,10 @@ public:
 	{
 		power_up,
 		pre_flight,
+		start_apu,
+		engine_start,
+		start_eng2,
+		start_eng1,
 		before_taxi,
 		before_take_off,
 		gear_up,
