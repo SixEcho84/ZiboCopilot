@@ -32,6 +32,7 @@ int PowerUpProcedure::powerUpProcedure(int stage)
 	if (stage == 0) { //BATTERY ON AND COVER
 		XPLMCommandOnce(XPLMFindCommand("sim/electrical/battery_1_on"));
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/button_switch_cover02"));
+		XPLMSetDataf(XPLMFindDataRef(DataRefList::dataRefList[32]), 1);
 		return 1;
 	}
 	else if (stage == 1) { //STANDBY POWER ON
@@ -39,25 +40,11 @@ int PowerUpProcedure::powerUpProcedure(int stage)
 		//XPLMCommandOnce(XPLMFindCommand("laminar/B738/button_switch_cover03"));
 		return 1;
 	}
-	else if (stage == 2) { //GPU ON
+	else if (stage == 2 && XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[28])) == 1) { //GPU ON
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/gpu_dn"));
 		return 1;
 	}
-	else if (stage == 3) { //APU
-		XPLMCommandOnce(XPLMFindCommand("laminar/B738/spring_toggle_switch/APU_start_pos_dn"));
-		return 1;
-	}
-	else if (stage == 4)
-	{
-		XPLMCommandBegin(XPLMFindCommand("laminar/B738/spring_toggle_switch/APU_start_pos_dn"));
-		return 1;
-	}
-	else if (stage == 5) // APU BUTTON RELEASE
-	{
-		XPLMCommandEnd(XPLMFindCommand("laminar/B738/spring_toggle_switch/APU_start_pos_dn"));
-		return 1;
-	}
-	else if (stage == 6) // LEFT IRS TO NAV
+	else if (stage == 3) // LEFT IRS TO NAV
 	{
 		if (XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[0])) == 3)
 			XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/irs_L_left"));
@@ -67,7 +54,7 @@ int PowerUpProcedure::powerUpProcedure(int stage)
 			}
 		return 1;
 	}
-	else if (stage == 7)  // RIGHT IRS TO NAV
+	else if (stage == 4)  // RIGHT IRS TO NAV
 	{
 		if (XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[1])) == 3)
 			XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/irs_R_left"));
@@ -77,21 +64,15 @@ int PowerUpProcedure::powerUpProcedure(int stage)
 			}
 		return 1;
 	}
-	else if (stage == 8 && XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[25])) == 1) { //APU GEN
-		XPLMCommandBegin(XPLMFindCommand("laminar/B738/toggle_switch/apu_gen1_dn"));
+
+	else if (stage == 5) { //IRS DISPLAY
+		XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/irs_dspl_sel_right"));
+		XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/irs_dspl_sel_right"));
+		XPLMCommandOnce(XPLMFindCommand("laminar/B738/toggle_switch/irs_dspl_sel_right"));
 		return 1;
 	}
-	else if (stage == 9) { //APU GEN
-		XPLMCommandEnd(XPLMFindCommand("laminar/B738/toggle_switch/apu_gen1_dn"));
-		return 1;
-	}
-	else if (stage == 10 && XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[25])) == 1)
-	{
-		XPLMCommandBegin(XPLMFindCommand("laminar/B738/toggle_switch/apu_gen2_dn"));
-		return 1;
-	}
-	else if (stage == 11) { //APU GEN
-		XPLMCommandEnd(XPLMFindCommand("laminar/B738/toggle_switch/apu_gen2_dn"));
+
+	else if (stage == 6) { //END
 		XPLMSpeakString("Powerup Procedures Completed");
 		return 2;
 	}

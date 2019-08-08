@@ -79,6 +79,7 @@ int CleanupProcedure::cleanupProcedure(int stage)
         XPLMCommandOnce(XPLMFindCommand("laminar/B738/knob/autobrake_dn"));
         XPLMCommandOnce(XPLMFindCommand("laminar/B738/knob/autobrake_dn"));
         XPLMCommandOnce(XPLMFindCommand("laminar/B738/knob/autobrake_up"));
+		XPLMCommandOnce(XPLMFindCommand("laminar/B738/push_button/chrono_fo_et_mode"));
 		XPLMSpeakString("Clean Up Procedures Completed");
 		return 2;
 	}

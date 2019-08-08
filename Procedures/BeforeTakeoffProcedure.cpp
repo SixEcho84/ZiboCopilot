@@ -50,6 +50,7 @@ int BeforeTakeoffProcedure::beforeTakeoffProcedure(int stage)
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/knob/transponder_mode_up"));
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/knob/transponder_mode_up"));
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/switch/wing_light_off"));
+		XPLMCommandOnce(XPLMFindCommand("laminar/B738/push_button/chrono_fo_et_mode"));
 		XPLMSpeakString("Before Takeoff Procedures Completed");
 		return 2;
 	}

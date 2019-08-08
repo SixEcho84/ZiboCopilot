@@ -87,8 +87,40 @@ int BeforeTaxiProcedure::beforeTaxiProcedure(int stage)
 		XPLMCommandOnce(XPLMFindCommand("laminar/B738/switch/rwy_light_right_on"));
 		return 1;
 	}
-	else if (stage == 13) {
-		XPLMSetDataf(XPLMFindDataRef(DataRefList::dataRefList[26]), 0.375);
+	else if (stage == 13) { //SET T/O FLAPS
+		
+		if (XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[29])) == 1)
+		{
+			XPLMSetDataf(XPLMFindDataRef(DataRefList::dataRefList[26]), 0);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+		}
+
+		if (XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[29])) == 5)
+		{
+			XPLMSetDataf(XPLMFindDataRef(DataRefList::dataRefList[26]), 0);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+		}
+
+		if (XPLMGetDatai(XPLMFindDataRef(DataRefList::dataRefList[29])) == 15)
+		{
+			XPLMSetDataf(XPLMFindDataRef(DataRefList::dataRefList[26]), 0);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+			Sleep(500);
+			XPLMCommandOnce(XPLMFindCommand("sim/flight_controls/flaps_down"));
+		}			
+		return 1;
+	}
+	else if (stage == 14) { //END
 		XPLMSpeakString("Before Taxi Procedures Completed");
 		return 2;
 	}
